@@ -37,6 +37,7 @@ func main() {
 
 	log.Println("Connected to the database")
 
+	// TODO: It's probably preferrable if these don't live here
 	createUsersStmt := `
 		CREATE TABLE IF NOT EXISTS users
 		(

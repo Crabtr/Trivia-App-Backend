@@ -12,12 +12,14 @@ import (
 // TODO: This isn't acceptable
 var signingKey = []byte("SuperDuperSecretSigningKey")
 
+// Struct received when a user attempts to create an account
 type CreateAttempt struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
 }
 
+// Struct received when a user attempts to authenticate
 type AuthAttempt struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -37,6 +39,7 @@ type AuthResponse struct {
 	Data    *AuthResponseData `json:"data,omitempty"`
 }
 
+// Generic struct for a row in the 'users' table
 type SQLUser struct {
 	Username     string
 	Email        string
@@ -46,6 +49,7 @@ type SQLUser struct {
 }
 
 func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Request) {
+	// Decode the received JSON body
 	var createAttempt CreateAttempt
 
 	err := json.NewDecoder(r.Body).Decode(&createAttempt)
@@ -53,9 +57,9 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 		panic(err)
 	}
 
-	// Verify the given information
+	// If there doesn't exist a user with the given username, then continue
+	// with the user creation routine
 	var count int
-
 	stmt := `
 		SELECT COUNT(*)
 		FROM users
@@ -75,6 +79,7 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 			panic(err)
 		}
 
+		// Add the user's information to the database
 		_, err = context.db.Exec(
 			`INSERT INTO users VALUES (?,?,?,?,?);`,
 			createAttempt.Username,
@@ -87,6 +92,7 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 			panic(err) // TODO: Better here
 		}
 
+		// Return a success payload
 		response, err := json.Marshal(AuthResponse{
 			Success: true,
 			Data: &AuthResponseData{
@@ -103,6 +109,7 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 
 		return
 	} else {
+		// Return a failure payload
 		response, err := json.Marshal(AuthResponse{
 			Success: false,
 			Message: "Username already exists",
@@ -119,12 +126,14 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// TODO: It might be preferrable to not run this as a function
 func ValidatePassword(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
 func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request) {
+	// Decode the received JSON body
 	var authAttempt AuthAttempt
 
 	err := json.NewDecoder(r.Body).Decode(&authAttempt)
@@ -148,6 +157,8 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
+			// This error only catches if the user doesn't exist
+			// Send a failure response
 			response, err := json.Marshal(AuthResponse{
 				Success: false,
 				Message: "User doesn't exist",
@@ -167,16 +178,21 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 	}
 
 	if ValidatePassword(authAttempt.Password, sqlUser.PasswordHash) {
+		// Generate a JSON web token (JWT)
+		// TODO: It's most lkely preferrable to use jwt.StandardClaims instead
+		// of jwt.MapClaims
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"username": authAttempt.Username,
 			"password": authAttempt.Password,
 		})
 
+		// Sign the token using our secret key
 		tokenString, err := token.SignedString(signingKey)
 		if err != nil {
 			panic(err)
 		}
 
+		// Return a success payload
 		response, err := json.Marshal(AuthResponse{
 			Success: true,
 			Data: &AuthResponseData{
@@ -194,6 +210,7 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 
 		return
 	} else {
+		// Return a failure payload
 		response, err := json.Marshal(AuthResponse{
 			Success: false,
 			Message: "Invalid password",
