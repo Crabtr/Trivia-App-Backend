@@ -60,16 +60,27 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 	// If there doesn't exist a user with the given username, then continue
 	// with the user creation routine
 	var count int
+	var emailcount int
 	stmt := `
 		SELECT COUNT(*)
 		FROM users
 		WHERE username=?;`
+	emailstmt := `
+	SELECT COUNT(*)
+	FROM users
+	WHERE email=?`
+
 	err = context.db.QueryRow(stmt, createAttempt.Username).Scan(&count)
 	if err != nil {
 		panic(err)
 	}
 
-	if count == 0 {
+	err = context.db.QueryRow(emailstmt, createAttempt.Email).Scan(&emailcount)
+	if err != nil {
+		panic(err)
+	}
+
+	if count == 0 && emailcount == 0 {
 		// Generate a password hash using bcrypt
 		passwordHash, err := bcrypt.GenerateFromPassword(
 			[]byte(createAttempt.Password),
@@ -112,7 +123,7 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 		// Return a failure payload
 		response, err := json.Marshal(AuthResponse{
 			Success: false,
-			Message: "Username already exists",
+			Message: "Username/Email already exists",
 		})
 		if err != nil {
 			panic(err)
