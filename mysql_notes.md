@@ -2,7 +2,7 @@
 * Install MySQL Community Server
     * https://dev.mysql.com/downloads/mysql/
 * Create a user
-    * grant all privileges on . to 'trivia'@'localhost' identified by 'supersecret123';
+    * grant all privileges on *.* to 'trivia'@'localhost' identified by 'supersecret123';
 * Login with the new user
     * mysql -u trivia -p
 * Create a datebase
