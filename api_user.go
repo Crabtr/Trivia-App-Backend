@@ -57,73 +57,20 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 		panic(err)
 	}
 
-	// If there doesn't exist a user with the given username, then continue
-	// with the user creation routine
+	// Ensure the given username is unique
 	var count int
-	var emailcount int
-	stmt := `
-		SELECT COUNT(*)
-		FROM users
-		WHERE username=?;`
-	emailstmt := `
-	SELECT COUNT(*)
-	FROM users
-	WHERE email=?`
 
-	err = context.db.QueryRow(stmt, createAttempt.Username).Scan(&count)
+	validUsernameStmt := `SELECT COUNT(*) FROM users WHERE username=?;`
+	err = context.db.QueryRow(validUsernameStmt, createAttempt.Username).Scan(&count)
 	if err != nil {
 		panic(err)
 	}
 
-	err = context.db.QueryRow(emailstmt, createAttempt.Email).Scan(&emailcount)
-	if err != nil {
-		panic(err)
-	}
-
-	if count == 0 && emailcount == 0 {
-		// Generate a password hash using bcrypt
-		passwordHash, err := bcrypt.GenerateFromPassword(
-			[]byte(createAttempt.Password),
-			bcrypt.DefaultCost,
-		)
-		if err != nil {
-			panic(err)
-		}
-
-		// Add the user's information to the database
-		_, err = context.db.Exec(
-			`INSERT INTO users VALUES (?,?,?,?,?);`,
-			createAttempt.Username,
-			createAttempt.Email,
-			passwordHash,
-			0,
-			0,
-		)
-		if err != nil {
-			panic(err) // TODO: Better here
-		}
-
-		// Return a success payload
-		response, err := json.Marshal(AuthResponse{
-			Success: true,
-			Data: &AuthResponseData{
-				Username: createAttempt.Username,
-			},
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write(response)
-
-		return
-	} else {
+	if count > 0 {
 		// Return a failure payload
 		response, err := json.Marshal(AuthResponse{
 			Success: false,
-			Message: "Username/Email already exists",
+			Message: "Username already exists",
 		})
 		if err != nil {
 			panic(err)
@@ -135,6 +82,71 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 
 		return
 	}
+
+	count = 0 // Reset count
+
+	// Ensure the given email is unique
+	validEmailStmt := `SELECT COUNT(*) FROM users WHERE email=?`
+	err = context.db.QueryRow(validEmailStmt, createAttempt.Email).Scan(&count)
+	if err != nil {
+		panic(err)
+	}
+
+	if count > 0 {
+		// Return a failure payload
+		response, err := json.Marshal(AuthResponse{
+			Success: false,
+			Message: "Email already exists",
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write(response)
+
+		return
+	}
+
+	// Generate a password hash using bcrypt
+	passwordHash, err := bcrypt.GenerateFromPassword(
+		[]byte(createAttempt.Password),
+		bcrypt.DefaultCost,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// Add the user's information to the database
+	_, err = context.db.Exec(
+		`INSERT INTO users VALUES (?,?,?,?,?);`,
+		createAttempt.Username,
+		createAttempt.Email,
+		passwordHash,
+		0,
+		0,
+	)
+	if err != nil {
+		panic(err) // TODO: Better here
+	}
+
+	// Return a success payload
+	response, err := json.Marshal(AuthResponse{
+		Success: true,
+		Data: &AuthResponseData{
+			Username: createAttempt.Username,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+
+	return
 }
 
 // TODO: It might be preferrable to not run this as a function
@@ -155,10 +167,7 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 	// Verify the given information
 	var sqlUser SQLUser
 
-	stmt := `
-		SELECT *
-		FROM users
-		WHERE username=?;`
+	stmt := `SELECT * FROM users WHERE username=?;`
 	err = context.db.QueryRow(stmt, authAttempt.Username).Scan(
 		&sqlUser.Username,
 		&sqlUser.Email,
