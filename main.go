@@ -24,9 +24,9 @@ func main() {
 	// Generate a connection string
 	dbPath := fmt.Sprintf(
 		"%s:%s@tcp(%s)/trivia?charset=utf8mb4",
-		"trivia",         // username
-		"supersecret123", // password
-		"0.0.0.0",        // address
+		"root",     // username
+		"rootpass", // password
+		"0.0.0.0",  // address
 	)
 
 	context.db, err = sql.Open("mysql", dbPath)

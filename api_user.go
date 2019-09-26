@@ -157,6 +157,7 @@ func ValidatePassword(password, hash string) bool {
 
 func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request) {
 	// Decode the received JSON body
+
 	var authAttempt AuthAttempt
 
 	err := json.NewDecoder(r.Body).Decode(&authAttempt)
@@ -245,4 +246,8 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 
 		return
 	}
+}
+
+func (context *Context) PlayAGame(w http.ResponseWriter, r *http.Request) {
+
 }
