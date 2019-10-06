@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
@@ -13,7 +17,7 @@ import (
 var signingKey = []byte("SuperDuperSecretSigningKey")
 
 // Struct received when a user attempts to create an account
-type CreateAttempt struct {
+type UserCreateAttempt struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
@@ -50,7 +54,7 @@ type SQLUser struct {
 
 func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Request) {
 	// Decode the received JSON body
-	var createAttempt CreateAttempt
+	var createAttempt UserCreateAttempt
 
 	err := json.NewDecoder(r.Body).Decode(&createAttempt)
 	if err != nil {
@@ -200,11 +204,11 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 
 	if ValidatePassword(authAttempt.Password, sqlUser.PasswordHash) {
 		// Generate a JSON web token (JWT)
-		// TODO: It's most lkely preferrable to use jwt.StandardClaims instead
-		// of jwt.MapClaims
+		// TODO: It's most likely preferrable if tokens expire.
+		// https://godoc.org/github.com/dgrijalva/jwt-go#MapClaims
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"username": authAttempt.Username,
-			"password": authAttempt.Password,
+			"iss": authAttempt.Username,    // Issuer
+			"iat": time.Now().UTC().Unix(), // IssuedAt
 		})
 
 		// Sign the token using our secret key
@@ -248,6 +252,86 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (context *Context) PlayAGame(w http.ResponseWriter, r *http.Request) {
+func ValidateJWTMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authorizationHeader := r.Header.Get("Authorization")
 
+		if authorizationHeader != "" {
+			bearerToken := strings.Split(authorizationHeader, " ")
+
+			if len(bearerToken) == 2 && bearerToken[0] == "Bearer" {
+				token, err := jwt.Parse(bearerToken[1], func(token *jwt.Token) (interface{}, error) {
+					if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+						return nil, fmt.Errorf("Error when parsing bearer token")
+					}
+
+					return []byte(signingKey), nil
+				})
+				if err != nil {
+					response, err := json.Marshal(AuthResponse{
+						Success: false,
+						Message: err.Error(),
+					})
+					if err != nil {
+						panic(err)
+					}
+
+					w.Header().Set("Content-Type", "application/json; charset=utf-8")
+					w.WriteHeader(http.StatusUnauthorized)
+					w.Write(response)
+
+					return
+				}
+
+				if token.Valid {
+					r = r.WithContext(context.WithValue(r.Context(), "decoded", token.Claims))
+					next(w, r)
+
+					return
+				} else {
+					response, err := json.Marshal(AuthResponse{
+						Success: false,
+						Message: "Invalid authorization header",
+					})
+					if err != nil {
+						panic(err)
+					}
+
+					w.Header().Set("Content-Type", "application/json; charset=utf-8")
+					w.WriteHeader(http.StatusUnauthorized)
+					w.Write(response)
+
+					return
+				}
+			} else {
+				response, err := json.Marshal(AuthResponse{
+					Success: false,
+					Message: "Invalid authorization header format",
+				})
+				if err != nil {
+					panic(err)
+				}
+
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write(response)
+
+				return
+			}
+		} else {
+			response, err := json.Marshal(AuthResponse{
+				Success: false,
+				Message: "An authorization header is required",
+			})
+			if err != nil {
+				panic(err)
+			}
+
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write(response)
+
+			return
+		}
+	})
 }
