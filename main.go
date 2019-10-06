@@ -12,21 +12,23 @@ import (
 
 // Context makes variables across scope boundaries
 type Context struct {
-	db *sql.DB
+	db       *sql.DB
+	sessions map[string]*Session // map session ID to session
 }
 
 func main() {
 	// Context provides global variables in a safe capacity
 	context := Context{}
+	context.sessions = make(map[string]*Session, 0)
 
 	var err error
 
 	// Generate a connection string
 	dbPath := fmt.Sprintf(
 		"%s:%s@tcp(%s)/trivia?charset=utf8mb4",
-		"root",     // username
-		"rootpass", // password
-		"0.0.0.0",  // address
+		"trivia",         // username
+		"supersecret123", // password
+		"0.0.0.0",        // address
 	)
 
 	context.db, err = sql.Open("mysql", dbPath)
@@ -66,9 +68,18 @@ func main() {
 	router := mux.NewRouter()
 
 	// Route registrations
+	// User endpoints
 	router.HandleFunc("/api/user/create", context.UserCreateEndpoint).Methods("POST")
 	router.HandleFunc("/api/user/auth", context.UserAuthEndpoint).Methods("POST")
 	// router.HandleFunc("/api/user/delete", context.UserAuthenticationEndpoint).Methods("POST")
+
+	// Gameplay endpoints
+	router.HandleFunc("/api/game/start", ValidateJWTMiddleware(context.GameStart)).Methods("GET")
+	router.HandleFunc("/api/game/join", ValidateJWTMiddleware(context.GameJoin)).Methods("POST")
+	router.HandleFunc("/api/game/leave", ValidateJWTMiddleware(context.GameLeave)).Methods("POST")
+	router.HandleFunc("/api/game/meta", ValidateJWTMiddleware(context.GameGetMeta)).Methods("GET")
+	router.HandleFunc("/api/game/question", ValidateJWTMiddleware(context.GameGetQuestion)).Methods("GET")
+	router.HandleFunc("/api/game/answer", ValidateJWTMiddleware(context.GamePostAnswer)).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", router)) // Start the server
 }
