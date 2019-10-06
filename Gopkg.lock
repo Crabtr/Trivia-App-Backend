@@ -34,15 +34,15 @@
     "blowfish",
   ]
   pruneopts = "UT"
-  revision = "9ee001bba392397c76f100a2d5b13afc86f167f1"
+  revision = "34f69633bfdcf9db92f698f8487115767eebef81"
 
 [[projects]]
   digest = "1:c25289f43ac4a68d88b02245742347c94f1e108c534dda442188015ff80669b3"
   name = "google.golang.org/appengine"
   packages = ["cloudsql"]
   pruneopts = "UT"
-  revision = "c71d63e301d75423acb410203c747cad31e9a5e7"
-  version = "v1.6.3"
+  revision = "bddb1f54ecfd64b1350fd2dd897fa11d426632bc"
+  version = "v1.6.4"
 
 [solve-meta]
   analyzer-name = "dep"
