@@ -144,10 +144,27 @@ func (context *Context) GameJoin(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	// Ensure the session exists
 	if session, ok := context.sessions[joinAttempt.SessionID]; ok {
-		// TODO: Verify the session's password
+		// Ensure the given password is correct
+		if joinAttempt.Password != session.Password {
+			response, err := json.Marshal(SessionResponse{
+				Success: false,
+				Message: "Invalid password",
+			})
+			if err != nil {
+				panic(err)
+			}
 
-		// Insert the player into the session if they aren't
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			// TODO: Should this return an http.StatusUnauthorized (401) instead?
+			w.WriteHeader(http.StatusOK)
+			w.Write(response)
+
+			return
+		}
+
+		// Insert the player into the session if they aren't already in it
 		if _, ok := session.Players[auth["iss"].(string)]; !ok {
 			session.Players[auth["iss"].(string)] = &SessionPlayer{}
 
@@ -208,10 +225,13 @@ func (context *Context) GameLeave(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	// Ensure the session exists
 	if session, ok := context.sessions[leaveAttempt.SessionID]; ok {
+		// Ensure the player's in the session
 		if _, ok := session.Players[auth["iss"].(string)]; ok {
 			delete(session.Players, auth["iss"].(string))
 
+			// Delete the session if there's 0 players
 			if len(session.Players) == 0 {
 				delete(context.sessions, leaveAttempt.SessionID)
 			}
@@ -279,9 +299,10 @@ func (context *Context) GameGetMeta(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := r.FormValue("session")
 
+	// Ensure the session exists
 	if session, ok := context.sessions[sessionID]; ok {
+		// Ensure the player's in the given session
 		isInSession := false
-
 		for username := range session.Players {
 			if username == auth["iss"] {
 				isInSession = true
@@ -298,6 +319,8 @@ func (context *Context) GameGetMeta(w http.ResponseWriter, r *http.Request) {
 				},
 			}
 
+			// If nil slices aren't converted to empty ones, then the JSON
+			// output contains NULL references and that's gross
 			for _, player := range payload.Data.Players {
 				if player.Answered == nil {
 					player.Answered = make([]int, 0)
