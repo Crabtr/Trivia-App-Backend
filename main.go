@@ -70,7 +70,7 @@ func main() {
 	// Route registrations
 	// User endpoints
 	router.HandleFunc("/api/user/create", context.UserCreateEndpoint).Methods("POST")
-	router.HandleFunc("/api/user/auth", context.UserAuthEndpoint).Methods("POST")
+	router.HandleFunc("/api/user/auth", context.UserAuthEndpoint).Methods("OPTIONS", "POST")
 	// router.HandleFunc("/api/user/delete", context.UserAuthenticationEndpoint).Methods("POST")
 
 	// Gameplay endpoints
