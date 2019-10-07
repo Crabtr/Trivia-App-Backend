@@ -32,11 +32,12 @@ type SessionPlayer struct {
 
 type Session struct {
 	// TODO: Should category be locked?
-	Type      int
-	StartedAt time.Time
-	Public    bool
-	Password  string
-	Players   map[string]*SessionPlayer // map username to player's data
+	Gamemode         int
+	StartedAt        time.Time
+	Public           bool
+	Password         string
+	Players          map[string]*SessionPlayer // map username to player's data
+	QuestionsHistory []*SQLQuestion
 }
 
 // TODO
@@ -107,7 +108,7 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Set the session's password
 	context.sessions[sessionID] = &Session{
-		Type:      1,
+		Gamemode:  1,
 		StartedAt: time.Now().UTC(),
 		Public:    startAttempt.Public,
 		Password:  startAttempt.Password,
@@ -314,7 +315,7 @@ func (context *Context) GameGetMeta(w http.ResponseWriter, r *http.Request) {
 				Success: true,
 				Data: &SessionResponseData{
 					Public:    session.Public,
-					StartedAt: session.StartedAt.Unix(),
+					StartedAt: session.StartedAt.UTC().Unix(),
 					Players:   session.Players,
 				},
 			}
