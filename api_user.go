@@ -219,7 +219,7 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 
 		// Return a success payload
 		response, err := json.Marshal(AuthResponse{
-			Success: true,
+
 			Data: &AuthResponseData{
 				Username: authAttempt.Username,
 				Token:    tokenString,
