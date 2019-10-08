@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -160,6 +161,21 @@ func ValidatePassword(password, hash string) bool {
 }
 
 func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		log.Println("Auth CORS request")
+
+		if origin := r.Header.Get("Origin"); origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Accept-Language, Content-Type")
+			w.WriteHeader(http.StatusOK)
+
+			return
+		}
+	}
+
+	log.Println("Auth request")
+
 	// Decode the received JSON body
 
 	var authAttempt AuthAttempt
@@ -193,6 +209,7 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 			}
 
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write(response)
 
@@ -230,11 +247,14 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 		}
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
 
 		return
 	} else {
+		log.Println("Invalid password")
+
 		// Return a failure payload
 		response, err := json.Marshal(AuthResponse{
 			Success: false,
@@ -245,6 +265,7 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 		}
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write(response)
 
