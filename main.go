@@ -78,6 +78,7 @@ func main() {
 	router.HandleFunc("/api/game/join", ValidateJWTMiddleware(context.GameJoin)).Methods("POST")
 	router.HandleFunc("/api/game/leave", ValidateJWTMiddleware(context.GameLeave)).Methods("POST")
 	router.HandleFunc("/api/game/meta", ValidateJWTMiddleware(context.GameGetMeta)).Methods("GET")
+	router.HandleFunc("/api/game/modify", ValidateJWTMiddleware(context.GameModify)).Methods("GET")
 	router.HandleFunc("/api/game/question", ValidateJWTMiddleware(context.GameGetQuestion)).Methods("GET")
 	router.HandleFunc("/api/game/answer", ValidateJWTMiddleware(context.GamePostAnswer)).Methods("POST")
 
