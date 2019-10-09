@@ -465,7 +465,7 @@ func (context *Context) GamePostAnswer(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if isInSession {
-			if answerAttempt.Answer == session.CurrentQuestion.Answer {
+			if answerAttempt.Answer == session.CurrentQuestion.CorrectAnswer {
 				// TODO: Record answer and points
 
 				response, err := json.Marshal(SessionResponse{
