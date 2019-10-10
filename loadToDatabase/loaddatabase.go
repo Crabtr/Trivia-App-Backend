@@ -40,6 +40,7 @@ func main() {
 	createQuestionsStmt := `
 	CREATE TABLE IF NOT EXISTS questions
 	(
+	id					 INT          NOT NULL AUTO_INCREMENT,
 	question_body        VARCHAR(255) NOT NULL UNIQUE,
 	category			 VARCHAR(255) NOT NULL,
 	difficulty           TEXT NOT NULL,
@@ -47,7 +48,8 @@ func main() {
 	correct_answer       VARCHAR(255) NOT NULL,
 	incorrect_answer_1	 VARCHAR(255) NOT NULL,
 	incorrect_answer_2	 VARCHAR(255),
-	incorrect_answer_3	 VARCHAR(255)
+	incorrect_answer_3	 VARCHAR(255),
+	PRIMARY KEY (id)
 	);`
 
 	_, err = db.Exec(createQuestionsStmt)
