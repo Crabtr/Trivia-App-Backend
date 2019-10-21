@@ -31,9 +31,9 @@ type SessionJoinAttempt struct {
 }
 
 type SessionStartAttempt struct {
-	Gamemode int    `json:"gamemode"`
-	Public   bool   `json:"public"`
-	Password string `json:"password"`
+	Gamemode     int    `json:"gamemode"`
+	SinglePlayer bool   `json:"single_player"`
+	Password     string `json:"password"`
 }
 
 type SessionPlayerAnswer struct {
@@ -54,7 +54,7 @@ type Session struct {
 	Category           string
 	Difficulty         string
 	StartedAt          time.Time
-	Public             bool
+	SinglePlayer       bool
 	Password           string
 	Players            map[string]*SessionPlayer // map username to player's data
 	CurrentQuestion    *SQLQuestion
@@ -78,12 +78,12 @@ type SessionResponseQuestion struct {
 }
 
 type SessionResponseData struct {
-	SessionID string                    `json:"session_id,omitempty"`
-	Public    bool                      `json:"public,omitempty"`
-	StartedAt int64                     `json:"started_at,omitempty"`
-	Players   map[string]*SessionPlayer `json:"players,omitempty"`
-	Questions []SessionResponseQuestion `json:"questions,omitempty"`
-	Correct   bool                      `json:"correct,omitempty"`
+	SessionID    string                    `json:"session_id,omitempty"`
+	SinglePlayer bool                      `json:"single_player,omitempty"`
+	StartedAt    int64                     `json:"started_at,omitempty"`
+	Players      map[string]*SessionPlayer `json:"players,omitempty"`
+	Questions    []SessionResponseQuestion `json:"questions,omitempty"`
+	Correct      bool                      `json:"correct,omitempty"`
 }
 
 // Generic struct for responding to authentication requests
@@ -145,9 +145,9 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If a session is public, then a password is optional. If it's private,
-	// then it can't have a password.
-	if startAttempt.Public == false && startAttempt.Password != "" {
+	// If a session is multi-player, then a password is optional. If it's
+	// single-player, then it can't have a password.
+	if startAttempt.SinglePlayer == false && startAttempt.Password != "" {
 		response, err := json.Marshal(SessionResponse{
 			Success: false,
 			Message: "Private sessions can't have passwords",
@@ -177,10 +177,10 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 
 	// Create a session and add it to the global state
 	context.sessions[sessionID] = &Session{
-		Gamemode:  startAttempt.Gamemode,
-		StartedAt: time.Now().UTC(),
-		Public:    startAttempt.Public,
-		Password:  startAttempt.Password,
+		Gamemode:     startAttempt.Gamemode,
+		StartedAt:    time.Now().UTC(),
+		SinglePlayer: startAttempt.SinglePlayer,
+		Password:     startAttempt.Password,
 	}
 	context.sessions[sessionID].Players = make(map[string]*SessionPlayer, 1)
 	context.sessions[sessionID].Players[auth["iss"].(string)] = &SessionPlayer{}
@@ -554,9 +554,9 @@ func (context *Context) GameGetMeta(w http.ResponseWriter, r *http.Request) {
 			payload := SessionResponse{
 				Success: true,
 				Data: &SessionResponseData{
-					Public:    session.Public,
-					StartedAt: session.StartedAt.UTC().Unix(),
-					Players:   session.Players,
+					SinglePlayer: session.SinglePlayer,
+					StartedAt:    session.StartedAt.UTC().Unix(),
+					Players:      session.Players,
 				},
 			}
 
