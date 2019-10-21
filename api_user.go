@@ -65,7 +65,10 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 	// Ensure the given username is unique
 	var count int
 
-	validUsernameStmt := `SELECT COUNT(*) FROM users WHERE username=?;`
+	validUsernameStmt := `
+		SELECT COUNT(*)
+		FROM users
+		WHERE username=?;`
 	err = context.db.QueryRow(validUsernameStmt, createAttempt.Username).Scan(&count)
 	if err != nil {
 		panic(err)
@@ -91,7 +94,10 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 	count = 0 // Reset count
 
 	// Ensure the given email is unique
-	validEmailStmt := `SELECT COUNT(*) FROM users WHERE email=?`
+	validEmailStmt := `
+		SELECT COUNT(*)
+		FROM users
+		WHERE email=?`
 	err = context.db.QueryRow(validEmailStmt, createAttempt.Email).Scan(&count)
 	if err != nil {
 		panic(err)
@@ -188,7 +194,10 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 	// Verify the given information
 	var sqlUser SQLUser
 
-	stmt := `SELECT * FROM users WHERE username=?;`
+	stmt := `
+		SELECT *
+		FROM users
+		WHERE username=?;`
 	err = context.db.QueryRow(stmt, authAttempt.Username).Scan(
 		&sqlUser.Username,
 		&sqlUser.Email,
