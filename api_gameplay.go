@@ -531,7 +531,7 @@ func (context *Context) GamePostAnswer(w http.ResponseWriter, r *http.Request) {
 }
 
 // API endpoint for clients to get session meta information
-func (context *Context) GameGetMeta(w http.ResponseWriter, r *http.Request) {
+func (context *Context) GameGetInfo(w http.ResponseWriter, r *http.Request) {
 	// Pull the user's decoded authentication information from their parsed token
 	decoded := r.Context().Value("decoded")
 	auth := decoded.(jwt.MapClaims)
