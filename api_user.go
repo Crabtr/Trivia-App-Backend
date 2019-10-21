@@ -54,6 +54,19 @@ type SQLUser struct {
 }
 
 func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		log.Println("Auth CORS request")
+
+		if origin := r.Header.Get("Origin"); origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Accept-Language, Content-Type")
+			w.WriteHeader(http.StatusOK)
+
+			return
+		}
+	}
+
 	// Decode the received JSON body
 	var createAttempt UserCreateAttempt
 
