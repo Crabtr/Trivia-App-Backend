@@ -378,9 +378,25 @@ func (context *Context) GameGetQuestion(w http.ResponseWriter, r *http.Request) 
 			if session.CurrentQuestion == nil {
 				// TODO: Set a question given the category ID that hasn't been
 				// given yet
-				// session.Category
+				stmt := `SELECT (id, question_body, correct_answer, incorrect_answer_1, incorrect_answer_2, incorrect_answer_3) FROM questions WHERE category=? AND difficulty=?;`
+				err := context.db.QueryRow(stmt, session.Category, session.Difficulty).Scan(
+
+					&session.CurrentQuestion.ID,
+					&session.CurrentQuestion.Body,
+					&session.CurrentQuestion.CorrectAnswer,
+					&session.CurrentQuestion.IncorrectAnswer1,
+					&session.CurrentQuestion.IncorrectAnswer2,
+					&session.CurrentQuestion.IncorrectAnswer3,
+				)
+				if err != nil {
+					panic(err)
+
+				}
 				// session.QuestionHistory
+				session.QuestionHistory = append(session.QuestionHistory, session.CurrentQuestion)
+
 				// Expiration date time.Now().Add(time.Second * 60)
+				session.QuestionExpiration = time.Now().Add(time.Second * 60)
 			}
 
 			payload := SessionResponse{

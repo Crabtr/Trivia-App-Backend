@@ -84,7 +84,7 @@ func main() {
 			if myQuestions.Results[i].QuestionType == "boolean" {
 
 				_, err = db.Exec(
-					`INSERT INTO questions VALUES (?,?,?,?,?,?,?,?);`,
+					`INSERT INTO questions (question_body, category, difficulty, type, correct_answer, incorrect_answer_1,incorrect_answer_2,incorrect_answer_3) VALUES (?,?,?,?,?,?,?,?);`,
 					myQuestions.Results[i].QuestionBody,
 					myQuestions.Results[i].Category,
 					myQuestions.Results[i].Difficulty,
@@ -102,7 +102,7 @@ func main() {
 			} else if myQuestions.Results[i].QuestionType == "multiple" {
 
 				_, err = db.Exec(
-					`INSERT INTO questions VALUES (?,?,?,?,?,?,?,?);`,
+					`INSERT INTO questions (question_body, category, difficulty, type, correct_answer, incorrect_answer_1,incorrect_answer_2,incorrect_answer_3) VALUES (?,?,?,?,?,?,?,?);`,
 					myQuestions.Results[i].QuestionBody,
 					myQuestions.Results[i].Category,
 					myQuestions.Results[i].Difficulty,
