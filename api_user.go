@@ -31,8 +31,10 @@ type AuthAttempt struct {
 }
 
 type AuthResponseData struct {
-	Username string `json:"username,omitempty"`
-	Token    string `json:"token,omitempty"`
+	Username    string `json:"username,omitempty"`
+	Token       string `json:"token,omitempty"`
+	Score       int    `json:"score,omitempty"`
+	GamesPlayed int    `json:"games_played,omitempty"`
 }
 
 // Generic struct for responding to authentication requests
@@ -293,6 +295,69 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 
 		return
 	}
+}
+
+func (context *Context) UserInfoEndpoint(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	// /api/user/info?username=username
+	username := r.FormValue("username")
+
+	var sqlUser SQLUser
+
+	stmt := `
+		SELECT *
+		FROM users
+		WHERE username=?;`
+	err := context.db.QueryRow(stmt, username).Scan(
+		&sqlUser.Username,
+		&sqlUser.Email,
+		&sqlUser.PasswordHash,
+		&sqlUser.Score,
+		&sqlUser.GamesPlayed,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// This error only catches if the user doesn't exist
+			// Send a failure response
+			response, err := json.Marshal(AuthResponse{
+				Success: false,
+				Message: "User doesn't exist",
+			})
+			if err != nil {
+				panic(err)
+			}
+
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write(response)
+
+			return
+		} else {
+			panic(err)
+		}
+	}
+
+	// Return a success payload
+	response, err := json.Marshal(AuthResponse{
+		Success: true,
+		Data: &AuthResponseData{
+			Username:    sqlUser.Username,
+			Score:       sqlUser.Score,
+			GamesPlayed: sqlUser.GamesPlayed,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+
+	return
 }
 
 func ValidateJWTMiddleware(next http.HandlerFunc) http.HandlerFunc {
