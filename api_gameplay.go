@@ -9,12 +9,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-// Gamemodes
-const (
-	GamemodeMarathon = iota // 0
-	GamemodeSprint          // 1
-)
-
 type SessionAnswerAttempt struct {
 	SessionID  string `json:"session_id"`
 	QuestionID string `json:"question_id"`
@@ -31,7 +25,7 @@ type SessionJoinAttempt struct {
 }
 
 type SessionStartAttempt struct {
-	Gamemode     int    `json:"gamemode"`
+	Gamemode     string `json:"gamemode"`
 	Category     string `json:"category"`
 	Difficulty   string `json:"difficulty"`
 	SinglePlayer bool   `json:"single_player"`
@@ -52,7 +46,7 @@ type SessionPlayer struct {
 
 type Session struct {
 	// TODO: Should category be locked?
-	Gamemode           int
+	Gamemode           string
 	Category           string
 	Difficulty         string
 	StartedAt          time.Time
@@ -140,11 +134,11 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Ensure the gamemode ID is valid
-	if startAttempt.Gamemode < GamemodeMarathon || startAttempt.Gamemode > GamemodeSprint {
+	// Ensure the gamemode is valid
+	if !contains(&[]string{"marathon", "sprint"}, &startAttempt.Gamemode) {
 		response, err := json.Marshal(SessionResponse{
 			Success: false,
-			Message: "Invalid gamemode ID",
+			Message: "Invalid gamemode",
 		})
 		if err != nil {
 			panic(err)
