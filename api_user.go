@@ -33,8 +33,8 @@ type AuthAttempt struct {
 type AuthResponseData struct {
 	Username    string `json:"username,omitempty"`
 	Token       string `json:"token,omitempty"`
-	Score       int    `json:"score,omitempty"`
-	GamesPlayed int    `json:"games_played,omitempty"`
+	Score       *int   `json:"score,omitempty"`
+	GamesPlayed *int   `json:"games_played,omitempty"`
 }
 
 // Generic struct for responding to authentication requests
@@ -344,8 +344,8 @@ func (context *Context) UserInfoEndpoint(w http.ResponseWriter, r *http.Request)
 		Success: true,
 		Data: &AuthResponseData{
 			Username:    sqlUser.Username,
-			Score:       sqlUser.Score,
-			GamesPlayed: sqlUser.GamesPlayed,
+			Score:       &sqlUser.Score,
+			GamesPlayed: &sqlUser.GamesPlayed,
 		},
 	})
 	if err != nil {
