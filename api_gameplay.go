@@ -32,6 +32,8 @@ type SessionJoinAttempt struct {
 
 type SessionStartAttempt struct {
 	Gamemode     int    `json:"gamemode"`
+	Category     string `json:"category"`
+	Difficulty   string `json:"difficulty"`
 	SinglePlayer bool   `json:"single_player"`
 	Password     string `json:"password"`
 }
@@ -43,7 +45,7 @@ type SessionPlayerAnswer struct {
 
 type SessionPlayer struct {
 	Score int `json:"score"`
-	// TODO: I think it would be preferrable if this kept track of the entire
+	// TODO: I think it would be preferable if this kept track of the entire
 	// question, the given answer, and the correctness.
 	Answers []*SessionPlayerAnswer `json:"answers"`
 }
@@ -91,6 +93,16 @@ type SessionResponse struct {
 	Success bool                 `json:"success"`
 	Message string               `json:"message,omitempty"`
 	Data    *SessionResponseData `json:"data,omitempty"`
+}
+
+func contains(source *[]string, find *string) bool {
+	for idx := range *source {
+		if (*source)[idx] == *find {
+			return true
+		}
+	}
+
+	return false
 }
 
 // API endpoint for clients to start games
@@ -145,6 +157,25 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Ensure the category is valid
+
+	// Ensure the difficulty is valid
+	if !contains(&[]string{"easy", "medium", "hard"}, &startAttempt.Difficulty) {
+		response, err := json.Marshal(SessionResponse{
+			Success: false,
+			Message: "Invalid difficulty",
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
+
+		return
+	}
+
 	// If a session is multi-player, then a password is optional. If it's
 	// single-player, then it can't have a password.
 	if startAttempt.SinglePlayer == false && startAttempt.Password != "" {
@@ -178,6 +209,8 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 	// Create a session and add it to the global state
 	context.sessions[sessionID] = &Session{
 		Gamemode:     startAttempt.Gamemode,
+		Category:     startAttempt.Category,
+		Difficulty:   startAttempt.Difficulty,
 		StartedAt:    time.Now().UTC(),
 		SinglePlayer: startAttempt.SinglePlayer,
 		Password:     startAttempt.Password,
@@ -378,7 +411,11 @@ func (context *Context) GameGetQuestion(w http.ResponseWriter, r *http.Request) 
 			if session.CurrentQuestion == nil {
 				// TODO: Set a question given the category ID that hasn't been
 				// given yet
-				stmt := `SELECT (id, question_body, correct_answer, incorrect_answer_1, incorrect_answer_2, incorrect_answer_3) FROM questions WHERE category=? AND difficulty=?;`
+				stmt := `
+					SELECT (id, question_body, correct_answer, incorrect_answer_1, incorrect_answer_2, incorrect_answer_3)
+					FROM questions
+					WHERE category=?
+					AND difficulty=?;`
 				err := context.db.QueryRow(stmt, session.Category, session.Difficulty).Scan(
 
 					&session.CurrentQuestion.ID,
