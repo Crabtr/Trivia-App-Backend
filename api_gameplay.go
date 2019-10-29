@@ -393,40 +393,33 @@ func (context *Context) GameGetQuestion(w http.ResponseWriter, r *http.Request) 
 	// TODO: Should this become middleware?
 	if session, ok := context.sessions[sessionID]; ok {
 		// Ensure the player's in the given session
-		isInSession := false
-		for username := range session.Players {
-			if username == auth["iss"] {
-				isInSession = true
-			}
-		}
-
-		if isInSession {
+		if _, ok := session.Players[auth["iss"].(string)]; ok {
 			// Ensure a question is set
-			if session.CurrentQuestion == nil {
-				// TODO: Set a question given the category ID that hasn't been
-				// given yet
+			if time.Now().UTC().Unix() > session.QuestionExpiration.UTC().Unix() || session.CurrentQuestion == nil {
+				var question SQLQuestion
+
 				stmt := `
-					SELECT (id, question_body, correct_answer, incorrect_answer_1, incorrect_answer_2, incorrect_answer_3)
+					SELECT id, question_body, correct_answer, incorrect_answer_1, incorrect_answer_2, incorrect_answer_3
 					FROM questions
 					WHERE category=?
 					AND difficulty=?;`
 				err := context.db.QueryRow(stmt, session.Category, session.Difficulty).Scan(
-
-					&session.CurrentQuestion.ID,
-					&session.CurrentQuestion.Body,
-					&session.CurrentQuestion.CorrectAnswer,
-					&session.CurrentQuestion.IncorrectAnswer1,
-					&session.CurrentQuestion.IncorrectAnswer2,
-					&session.CurrentQuestion.IncorrectAnswer3,
+					&question.ID,
+					&question.Body,
+					&question.CorrectAnswer,
+					&question.IncorrectAnswer1,
+					&question.IncorrectAnswer2,
+					&question.IncorrectAnswer3,
 				)
 				if err != nil {
 					panic(err)
 
 				}
-				// session.QuestionHistory
+
+				session.CurrentQuestion = &question
+
 				session.QuestionHistory = append(session.QuestionHistory, session.CurrentQuestion)
 
-				// Expiration date time.Now().Add(time.Second * 60)
 				session.QuestionExpiration = time.Now().Add(time.Second * 60)
 			}
 
@@ -444,6 +437,8 @@ func (context *Context) GameGetQuestion(w http.ResponseWriter, r *http.Request) 
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.IncorrectAnswer1)
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.IncorrectAnswer2)
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.IncorrectAnswer3)
+
+			payload.Data.Questions = append(payload.Data.Questions, responseQuestion)
 
 			response, err := json.Marshal(payload)
 			if err != nil {
@@ -504,14 +499,7 @@ func (context *Context) GamePostAnswer(w http.ResponseWriter, r *http.Request) {
 	// Ensure the session exists
 	if session, ok := context.sessions[answerAttempt.SessionID]; ok {
 		// Ensure the player's in the given session
-		isInSession := false
-		for username := range session.Players {
-			if username == auth["iss"] {
-				isInSession = true
-			}
-		}
-
-		if isInSession {
+		if _, ok := session.Players[auth["iss"].(string)]; ok {
 			if answerAttempt.Answer == session.CurrentQuestion.CorrectAnswer {
 				// TODO: Record answer and points
 
@@ -590,14 +578,7 @@ func (context *Context) GameGetInfo(w http.ResponseWriter, r *http.Request) {
 	// Ensure the session exists
 	if session, ok := context.sessions[sessionID]; ok {
 		// Ensure the player's in the given session
-		isInSession := false
-		for username := range session.Players {
-			if username == auth["iss"] {
-				isInSession = true
-			}
-		}
-
-		if isInSession {
+		if _, ok := session.Players[auth["iss"].(string)]; ok {
 			payload := SessionResponse{
 				Success: true,
 				Data: &SessionResponseData{
