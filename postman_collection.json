@@ -1,0 +1,378 @@
+{
+	"info": {
+		"_postman_id": "cee2dc7c-5d3d-46a1-8869-ad49ccc4e203",
+		"name": "Triva App",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "user, create",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"username\": \"evan\",\n\t\"password\": \"secret\",\n\t\"email\": \"evan.crabtr@gmail.com\"\n}"
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/user/create",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"user",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user, auth",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"username\": \"evan\",\n\t\"password\": \"secret\"\n}"
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/user/auth",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"user",
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user, info",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"username\": \"evan\",\n\t\"password\": \"secret\"\n}"
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/user/info?username=evan",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"user",
+						"info"
+					],
+					"query": [
+						{
+							"key": "username",
+							"value": "evan"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "game, start",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzAzMjI0MDgsImlzcyI6ImV2YW4ifQ.bdIn733Lvw6LGhl55LLrDzpL1V6Bp0r2972q04EZHkw",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"gamemode\": \"marathon\",\n\t\"category\": \"Science: Computers\",\n\t\"difficulty\": \"medium\",\n\t\"single_player\": true,\n\t\"password\": \"\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/game/start",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"game",
+						"start"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "game, join",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzAzMjI0MDgsImlzcyI6ImV2YW4ifQ.bdIn733Lvw6LGhl55LLrDzpL1V6Bp0r2972q04EZHkw"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"session_id\": \"x1PfiDGYB22lwl3o\",\n    \"password\": \"\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/game/join",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"game",
+						"join"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "game, leave",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzAzMjI0MDgsImlzcyI6ImV2YW4ifQ.bdIn733Lvw6LGhl55LLrDzpL1V6Bp0r2972q04EZHkw"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"session_id\": \"SDGmxZjQXZfOtuP3\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/game/leave",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"game",
+						"leave"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "game, question",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzAzMjI0MDgsImlzcyI6ImV2YW4ifQ.bdIn733Lvw6LGhl55LLrDzpL1V6Bp0r2972q04EZHkw"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "134.209.35.144:8080/api/game/question?session=N2lABJvsD1L7lBOF",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"game",
+						"question"
+					],
+					"query": [
+						{
+							"key": "session",
+							"value": "N2lABJvsD1L7lBOF"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "game, answer",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzAzMjI0MDgsImlzcyI6ImV2YW4ifQ.bdIn733Lvw6LGhl55LLrDzpL1V6Bp0r2972q04EZHkw"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"session_id\": \"N2lABJvsD1L7lBOF\",\n\t\"question_id\": \"60\",\n\t\"answer\": \"The Onion Router\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/game/answer",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"game",
+						"answer"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "game, info",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzAzMjI0MDgsImlzcyI6ImV2YW4ifQ.bdIn733Lvw6LGhl55LLrDzpL1V6Bp0r2972q04EZHkw"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "134.209.35.144:8080/api/game/info?session=tSgKw2uOzmH9kF6d",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"game",
+						"info"
+					],
+					"query": [
+						{
+							"key": "session",
+							"value": "tSgKw2uOzmH9kF6d"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
