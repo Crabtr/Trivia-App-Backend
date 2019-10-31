@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -63,9 +64,9 @@ func main() {
 
 	questionCount := 0
 
-	for questionCount < 3369 {
+	for questionCount <= 3369 {
 
-		url := fmt.Sprintf("https://opentdb.com/api.php?amount=50")
+		url := fmt.Sprintf("https://opentdb.com/api.php?amount=50&encode=base64")
 
 		respone, err := http.Get(url)
 		if err != nil {
@@ -81,7 +82,51 @@ func main() {
 		}
 
 		for i := 0; i <= len(myQuestions.Results)-1; i++ {
-			if myQuestions.Results[i].QuestionType == "boolean" {
+
+			if myQuestions.Results[i].QuestionType == "Ym9vbGVhbg==" {
+				data, err := base64.StdEncoding.DecodeString(myQuestions.Results[i].QuestionBody)
+				myQuestions.Results[i].QuestionBody = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].Category)
+				myQuestions.Results[i].Category = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].Difficulty)
+				myQuestions.Results[i].Difficulty = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].QuestionType)
+				myQuestions.Results[i].QuestionType = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].CorrectAnswer)
+				myQuestions.Results[i].CorrectAnswer = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].IncorrectAnswers[0])
+				myQuestions.Results[i].IncorrectAnswers[0] = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
 
 				_, err = db.Exec(
 					`INSERT INTO questions (question_body, category, difficulty, type, correct_answer, incorrect_answer_1,incorrect_answer_2,incorrect_answer_3) VALUES (?,?,?,?,?,?,?,?);`,
@@ -99,7 +144,67 @@ func main() {
 					fmt.Println(myQuestions.Results[i])
 				}
 
-			} else if myQuestions.Results[i].QuestionType == "multiple" {
+			} else if myQuestions.Results[i].QuestionType == "bXVsdGlwbGU=" {
+
+				data, err := base64.StdEncoding.DecodeString(myQuestions.Results[i].QuestionBody)
+				myQuestions.Results[i].QuestionBody = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].Category)
+				myQuestions.Results[i].Category = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].Difficulty)
+				myQuestions.Results[i].Difficulty = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].QuestionType)
+				myQuestions.Results[i].QuestionType = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].CorrectAnswer)
+				myQuestions.Results[i].CorrectAnswer = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].IncorrectAnswers[0])
+				myQuestions.Results[i].IncorrectAnswers[0] = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].IncorrectAnswers[1])
+				myQuestions.Results[i].IncorrectAnswers[1] = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
+
+				data, err = base64.StdEncoding.DecodeString(myQuestions.Results[i].IncorrectAnswers[2])
+				myQuestions.Results[i].IncorrectAnswers[2] = string(data)
+
+				if err != nil {
+
+					panic(err)
+				}
 
 				_, err = db.Exec(
 					`INSERT INTO questions (question_body, category, difficulty, type, correct_answer, incorrect_answer_1,incorrect_answer_2,incorrect_answer_3) VALUES (?,?,?,?,?,?,?,?);`,
@@ -123,10 +228,9 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		if questionCount == 3369 {
-			fmt.Println("LOADING TO DATABASE COMPLETE!!")
-		}
 
 	}
+
+	fmt.Println("LOADING DATABASE COMPLETE")
 
 }
