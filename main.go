@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -67,11 +68,15 @@ func main() {
 	// HTTP router
 	router := mux.NewRouter()
 
+	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	methods := handlers.AllowedMethods([]string{"GET", "POST"})
+	origins := handlers.AllowedOrigins([]string{"*"})
+
 	// Route registrations
 	// User endpoints
 	router.HandleFunc("/api/user/create", context.UserCreateEndpoint).Methods("POST")
-	router.HandleFunc("/api/user/auth", context.UserAuthEndpoint).Methods("OPTIONS", "POST")
-	router.HandleFunc("/api/user/info", context.UserInfoEndpoint).Methods("OPTIONS", "POST")
+	router.HandleFunc("/api/user/auth", context.UserAuthEndpoint).Methods("POST")
+	router.HandleFunc("/api/user/info", context.UserInfoEndpoint).Methods("POST")
 	// router.HandleFunc("/api/user/delete", context.UserAuthenticationEndpoint).Methods("POST")
 
 	// Gameplay endpoints
@@ -83,5 +88,5 @@ func main() {
 	router.HandleFunc("/api/game/question", ValidateJWTMiddleware(context.GameGetQuestion)).Methods("GET")
 	router.HandleFunc("/api/game/answer", ValidateJWTMiddleware(context.GamePostAnswer)).Methods("POST")
 
-	log.Fatal(http.ListenAndServe(":8080", router)) // Start the server
+	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(headers, methods, origins)(router))) // Start the server
 }
