@@ -88,5 +88,7 @@ func main() {
 	router.HandleFunc("/api/game/question", ValidateJWTMiddleware(context.GameGetQuestion)).Methods("GET")
 	router.HandleFunc("/api/game/answer", ValidateJWTMiddleware(context.GamePostAnswer)).Methods("POST")
 
+	router.HandleFunc("/api/meta", context.GameMeta).Methods("GET")
+
 	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(headers, methods, origins)(router))) // Start the server
 }

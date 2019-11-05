@@ -80,6 +80,8 @@ type SessionResponseData struct {
 	Players      map[string]*SessionPlayer `json:"players,omitempty"`
 	Questions    []SessionResponseQuestion `json:"questions,omitempty"`
 	Correct      bool                      `json:"correct,omitempty"`
+	Categories   []string                  `json:"categories,omitempty"`
+	Difficulties []string                  `json:"difficulties,omitempty"`
 }
 
 // Generic struct for responding to authentication requests
@@ -639,4 +641,70 @@ func (context *Context) GameGetInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (context *Context) GameModify(w http.ResponseWriter, r *http.Request) {
+}
+
+func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
+	var metaData SessionResponseData
+
+	categoriesStmt := `
+		SELECT DISTINCT category
+		FROM questions;`
+	rows, err := context.db.Query(categoriesStmt)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var category string
+		err := rows.Scan(&category)
+		if err != nil {
+			panic(err)
+		}
+
+		metaData.Categories = append(metaData.Categories, category)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		panic(err)
+	}
+
+	difficultiesStmt := `
+		SELECT DISTINCT difficulty
+		FROM questions;`
+	rows, err = context.db.Query(difficultiesStmt)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var difficulty string
+		err := rows.Scan(&difficulty)
+		if err != nil {
+			panic(err)
+		}
+
+		metaData.Difficulties = append(metaData.Difficulties, difficulty)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		panic(err)
+	}
+
+	response, err := json.Marshal(SessionResponse{
+		Success: true,
+		Data:    &metaData,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+
+	return
 }
