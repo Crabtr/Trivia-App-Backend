@@ -15,6 +15,15 @@ type SessionAnswerAttempt struct {
 	Answer     string `json:"answer"`
 }
 
+type SessionModifyAttempt struct {
+	SessionID    string `json:"session_id"`
+	Gamemode     string `json:"gamemode"`
+	Category     string `json:"category"`
+	Difficulty   string `json:"difficulty"`
+	SinglePlayer bool   `json:"single_player"`
+	Password     string `json:"password"`
+}
+
 type SessionLeaveAttempt struct {
 	SessionID string `json:"session_id"`
 }
@@ -641,6 +650,106 @@ func (context *Context) GameGetInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (context *Context) GameModify(w http.ResponseWriter, r *http.Request) {
+	// Pull the user's decoded authentication information from their parsed token
+	decoded := r.Context().Value("decoded")
+	auth := decoded.(jwt.MapClaims)
+
+	// Decode the received JSON body
+	var modifyAttempt SessionModifyAttempt
+
+	err := json.NewDecoder(r.Body).Decode(&modifyAttempt)
+	if err != nil {
+		panic(err)
+	}
+
+	// Ensure the session exists
+	if session, ok := context.sessions[modifyAttempt.SessionID]; ok {
+		// Only modify the session if the player's in it
+		if _, ok := session.Players[auth["iss"].(string)]; ok {
+			// Change the session's password
+			if modifyAttempt.Password != session.Password {
+				response, err := json.Marshal(SessionResponse{
+					Success: false,
+					Message: "Invalid password",
+				})
+				if err != nil {
+					panic(err)
+				}
+
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				// TODO: Should this return an http.StatusUnauthorized (401) instead?
+				w.WriteHeader(http.StatusOK)
+				w.Write(response)
+
+				return
+			}
+
+			// Convert a multiplayer session to a single player one
+			if modifyAttempt.SinglePlayer != session.SinglePlayer && modifyAttempt.SinglePlayer == true {
+				session.SinglePlayer = modifyAttempt.SinglePlayer
+
+				// TODO: This presumes the one issuing the modification is the
+				// creator of the game
+				for playerID := range session.Players {
+					if playerID != auth["iss"].(string) {
+						delete(session.Players, playerID)
+					}
+				}
+			}
+
+			// Change the gamemode
+			if modifyAttempt.Gamemode != session.Gamemode {
+				switch modifyAttempt.Gamemode {
+				case "sprint":
+					// stuff
+					break
+				case "marathon":
+					// stuff
+					break
+				}
+			}
+
+			response, err := json.Marshal(SessionResponse{Success: true})
+			if err != nil {
+				panic(err)
+			}
+
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			w.Write(response)
+
+			return
+		} else {
+			response, err := json.Marshal(SessionResponse{
+				Success: false,
+				Message: "You aren't in this session",
+			})
+			if err != nil {
+				panic(err)
+			}
+
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			w.Write(response)
+
+			return
+		}
+
+	} else {
+		response, err := json.Marshal(SessionResponse{
+			Success: false,
+			Message: "Session doesn't exist",
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
+
+		return
+	}
 }
 
 func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
