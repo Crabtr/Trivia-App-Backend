@@ -162,7 +162,47 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Ensure the category is valid
+	// Ensure the category is valid
+	var categories []string
+	stmt := `
+		SELECT DISTINCT category
+		FROM questions;`
+	rows, err := context.db.Query(stmt)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var category string
+		err := rows.Scan(&category)
+		if err != nil {
+			panic(err)
+		}
+
+		categories = append(categories, category)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		panic(err)
+	}
+
+	if !contains(&categories, &startAttempt.Category) {
+		response, err := json.Marshal(SessionResponse{
+			Success: false,
+			Message: "Invalid category",
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
+
+		return
+	}
 
 	// Ensure the difficulty is valid
 	if !contains(&[]string{"easy", "medium", "hard"}, &startAttempt.Difficulty) {
