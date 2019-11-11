@@ -92,6 +92,22 @@ type SessionResponseData struct {
 	Categories   []string                  `json:"categories,omitempty"`
 	Difficulties []string                  `json:"difficulties,omitempty"`
 }
+type allUsersLeaderboard struct {
+	eachUser []Leaderboard `json:"user,omitempty"`
+}
+type Leaderboard struct {
+	username string `json:"username,omitempty"`
+	score    int64  `json:"score,omitempty"`
+}
+
+type SQL_LIMIT_OFFSET struct {
+	LIMIT  int64 `json:"limit"`
+	OFFSET int64 `json:"offset"`
+}
+
+type LeaderboardResponse struct {
+	DATA *allUsersLeaderboard `json:"data"`
+}
 
 // Generic struct for responding to authentication requests
 type SessionResponse struct {
@@ -830,6 +846,7 @@ func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var difficulty string
+
 		err := rows.Scan(&difficulty)
 		if err != nil {
 			panic(err)
@@ -856,4 +873,55 @@ func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 
 	return
+}
+
+func (context *Context) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
+	// Decode the received JSON body
+	var usersForLeaderboards allUsersLeaderboard
+	var limit_offset SQL_LIMIT_OFFSET
+	err := json.NewDecoder(r.Body).Decode(&limit_offset)
+	if err != nil {
+		panic(err)
+	}
+
+	stmt := "select * from leaderboard ORDER BY score DESC LIMIT ?,?;"
+
+	rows, err := context.db.Query(stmt, limit_offset.OFFSET, limit_offset.LIMIT)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var username string
+		var score int64
+		var tmp Leaderboard
+		err := rows.Scan(&username, &score)
+		if err != nil {
+			panic(err)
+		}
+
+		tmp.username = username
+		tmp.score = score
+
+		usersForLeaderboards.eachUser = append(usersForLeaderboards.eachUser, tmp)
+	}
+	err = rows.Err()
+	if err != nil {
+		panic(err)
+	}
+
+	response, err := json.Marshal(LeaderboardResponse{
+		DATA: &usersForLeaderboards,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
+
+	return
+
 }
