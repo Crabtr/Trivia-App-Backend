@@ -80,7 +80,7 @@ func main() {
 	// router.HandleFunc("/api/user/delete", context.UserAuthenticationEndpoint).Methods("POST")
 
 	// Gameplay endpoints
-	router.HandleFunc("/api/game/start", ValidateJWTMiddleware(context.GameStart)).Methods("GET")
+	router.HandleFunc("/api/game/start", ValidateJWTMiddleware(context.GameStart)).Methods("POST")
 	router.HandleFunc("/api/game/join", ValidateJWTMiddleware(context.GameJoin)).Methods("POST")
 	router.HandleFunc("/api/game/leave", ValidateJWTMiddleware(context.GameLeave)).Methods("POST")
 	router.HandleFunc("/api/game/info", ValidateJWTMiddleware(context.GameGetInfo)).Methods("GET")
