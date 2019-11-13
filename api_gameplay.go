@@ -799,7 +799,7 @@ func (context *Context) GameModify(w http.ResponseWriter, r *http.Request) {
 }
 
 func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
-	var metaData SessionResponseData
+	var payload SessionResponseData
 
 	categoriesStmt := `
 		SELECT DISTINCT category
@@ -817,7 +817,7 @@ func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		metaData.Categories = append(metaData.Categories, category)
+		payload.Categories = append(payload.Categories, category)
 	}
 
 	err = rows.Err()
@@ -842,7 +842,7 @@ func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		metaData.Difficulties = append(metaData.Difficulties, difficulty)
+		payload.Difficulties = append(payload.Difficulties, difficulty)
 	}
 
 	err = rows.Err()
