@@ -9,6 +9,11 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+type LeaderboardPlayer struct {
+	Username string `json:"username"`
+	Score    int64  `json:"score"`
+}
+
 type SessionAnswerAttempt struct {
 	SessionID  string `json:"session_id"`
 	QuestionID string `json:"question_id"`
@@ -91,22 +96,7 @@ type SessionResponseData struct {
 	Correct      bool                      `json:"correct,omitempty"`
 	Categories   []string                  `json:"categories,omitempty"`
 	Difficulties []string                  `json:"difficulties,omitempty"`
-}
-type allUsersLeaderboard struct {
-	eachUser []Leaderboard `json:"user,omitempty"`
-}
-type Leaderboard struct {
-	username string `json:"username,omitempty"`
-	score    int64  `json:"score,omitempty"`
-}
-
-type SQL_LIMIT_OFFSET struct {
-	LIMIT  int64 `json:"limit"`
-	OFFSET int64 `json:"offset"`
-}
-
-type LeaderboardResponse struct {
-	DATA *allUsersLeaderboard `json:"data"`
+	Leaderboard  []LeaderboardPlayer       `json:"leaderboard,omitempty"`
 }
 
 // Generic struct for responding to authentication requests
@@ -860,9 +850,10 @@ func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	// NOTE: We recycle the SessionResponse struct because...why not?
 	response, err := json.Marshal(SessionResponse{
 		Success: true,
-		Data:    &metaData,
+		Data:    &payload,
 	})
 	if err != nil {
 		panic(err)
@@ -876,43 +867,38 @@ func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
 }
 
 func (context *Context) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
-	// Decode the received JSON body
-	var usersForLeaderboards allUsersLeaderboard
-	var limit_offset SQL_LIMIT_OFFSET
-	err := json.NewDecoder(r.Body).Decode(&limit_offset)
-	if err != nil {
-		panic(err)
-	}
+	var payload SessionResponseData
 
-	stmt := "select * from leaderboard ORDER BY score DESC LIMIT ?,?;"
-
-	rows, err := context.db.Query(stmt, limit_offset.OFFSET, limit_offset.LIMIT)
+	// TODO: This should probably ensure the offset is valid
+	// TODO: DESC might be unnecessary as the table already sorts
+	// TODO: Ensure this uses and offset
+	stmt := `
+		SELECT *
+		FROM leaderboard;`
+	rows, err := context.db.Query(stmt)
 	if err != nil {
 		panic(err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var username string
-		var score int64
-		var tmp Leaderboard
-		err := rows.Scan(&username, &score)
+		var player LeaderboardPlayer
+		err := rows.Scan(&player.Username, &player.Score)
 		if err != nil {
 			panic(err)
 		}
 
-		tmp.username = username
-		tmp.score = score
-
-		usersForLeaderboards.eachUser = append(usersForLeaderboards.eachUser, tmp)
+		payload.Leaderboard = append(payload.Leaderboard, player)
 	}
 	err = rows.Err()
 	if err != nil {
 		panic(err)
 	}
 
-	response, err := json.Marshal(LeaderboardResponse{
-		DATA: &usersForLeaderboards,
+	// NOTE: We recycle the SessionResponse struct because...why not?
+	response, err := json.Marshal(SessionResponse{
+		Success: true,
+		Data:    &payload,
 	})
 	if err != nil {
 		panic(err)

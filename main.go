@@ -27,9 +27,9 @@ func main() {
 	// Generate a connection string
 	dbPath := fmt.Sprintf(
 		"%s:%s@tcp(%s)/trivia?charset=utf8mb4",
-		"root",     // username
-		"rootpass", // password
-		"0.0.0.0",  // address
+		"trivia",         // username
+		"supersecret123", // password
+		"0.0.0.0",        // address
 	)
 
 	context.db, err = sql.Open("mysql", dbPath)
@@ -87,9 +87,9 @@ func main() {
 	router.HandleFunc("/api/game/modify", ValidateJWTMiddleware(context.GameModify)).Methods("POST")
 	router.HandleFunc("/api/game/question", ValidateJWTMiddleware(context.GameGetQuestion)).Methods("GET")
 	router.HandleFunc("/api/game/answer", ValidateJWTMiddleware(context.GamePostAnswer)).Methods("POST")
-	router.HandleFunc("/api/game/leaderboard", context.GetLeaderboard).Methods("GET")
 
 	router.HandleFunc("/api/meta", context.GameMeta).Methods("GET")
+	router.HandleFunc("/api/leaderboard", context.GetLeaderboard).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(headers, methods, origins)(router))) // Start the server
 }
