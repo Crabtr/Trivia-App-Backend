@@ -803,7 +803,7 @@ func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
 
 	categoriesStmt := `
 		SELECT DISTINCT category
-		FROM questions;`
+		FROM questions order by category;`
 	rows, err := context.db.Query(categoriesStmt)
 	if err != nil {
 		panic(err)
