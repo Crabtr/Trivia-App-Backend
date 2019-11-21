@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/handlers"
@@ -13,8 +14,9 @@ import (
 
 // Context makes variables across scope boundaries
 type Context struct {
-	db       *sql.DB
-	sessions map[string]*Session // map session ID to session
+	db           *sql.DB
+	sessions     map[string]*Session // map session ID to session
+	sessionsLock sync.Mutex
 }
 
 func main() {
@@ -65,9 +67,12 @@ func main() {
 		panic(err)
 	}
 
+	go context.ExpireQuestions()
+
 	// HTTP router
 	router := mux.NewRouter()
 
+	// CORS handling
 	headers := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	methods := handlers.AllowedMethods([]string{"GET", "POST"})
 	origins := handlers.AllowedOrigins([]string{"*"})

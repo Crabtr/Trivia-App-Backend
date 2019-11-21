@@ -2,8 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"log"
+	"math"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -16,7 +20,7 @@ type LeaderboardPlayer struct {
 
 type SessionAnswerAttempt struct {
 	SessionID  string `json:"session_id"`
-	QuestionID string `json:"question_id"`
+	QuestionID int    `json:"question_id"`
 	Answer     string `json:"answer"`
 }
 
@@ -70,10 +74,12 @@ type Session struct {
 	CurrentQuestion    *SQLQuestion
 	QuestionExpiration time.Time
 	QuestionHistory    []*SQLQuestion // Index corresponds with Players.Player.Answered
+	QuestionHistoryIDs []int
+	Lock               sync.Mutex
 }
 
 type SQLQuestion struct {
-	ID               string `json:"id"`
+	ID               int    `json:"id"`
 	Body             string `json:"body"`
 	CorrectAnswer    string `json:"correct_answer"`
 	IncorrectAnswer1 string `json:"incorrect_answer_1"`
@@ -82,7 +88,7 @@ type SQLQuestion struct {
 }
 
 type SessionResponseQuestion struct {
-	ID      string   `json:"id"`
+	ID      int      `json:"id"`
 	Body    string   `json:"body"`
 	Answers []string `json:"answers"`
 }
@@ -93,7 +99,7 @@ type SessionResponseData struct {
 	StartedAt    int64                     `json:"started_at,omitempty"`
 	Players      map[string]*SessionPlayer `json:"players,omitempty"`
 	Questions    []SessionResponseQuestion `json:"questions,omitempty"`
-	Correct      bool                      `json:"correct,omitempty"`
+	Correct      *bool                     `json:"correct,omitempty"`
 	Categories   []string                  `json:"categories,omitempty"`
 	Difficulties []string                  `json:"difficulties,omitempty"`
 	Leaderboard  []LeaderboardPlayer       `json:"leaderboard,omitempty"`
@@ -106,7 +112,126 @@ type SessionResponse struct {
 	Data    *SessionResponseData `json:"data,omitempty"`
 }
 
-func contains(source *[]string, find *string) bool {
+// Set a new question
+func (context *Context) NewQuestion(sessionID string) error {
+	if session, ok := context.sessions[sessionID]; ok {
+		session.Lock.Lock()
+
+		var questionIDs []int
+		questionIDsStmt := `
+			SELECT id
+			FROM questions
+			WHERE category=?
+			AND difficulty=?;`
+		rows, err := context.db.Query(questionIDsStmt, session.Category, session.Difficulty)
+		if err != nil {
+			panic(err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var questionID int
+			err := rows.Scan(&questionID)
+			if err != nil {
+				panic(err)
+			}
+
+			questionIDs = append(questionIDs, questionID)
+		}
+
+		err = rows.Err()
+		if err != nil {
+			panic(err)
+		}
+
+		rand.Seed(time.Now().Unix())
+
+		var questionID int
+
+		for {
+			questionID = questionIDs[rand.Intn(len(questionIDs))]
+
+			if !containsInt(&session.QuestionHistoryIDs, &questionID) {
+				break
+			}
+
+			log.Printf("New question collision, trying again...")
+		}
+
+		var question SQLQuestion
+
+		questionStmt := `
+			SELECT id, question_body, correct_answer, incorrect_answer_1, incorrect_answer_2, incorrect_answer_3
+			FROM questions
+			WHERE id=?;`
+		err = context.db.QueryRow(questionStmt, questionID).Scan(
+			&question.ID,
+			&question.Body,
+			&question.CorrectAnswer,
+			&question.IncorrectAnswer1,
+			&question.IncorrectAnswer2,
+			&question.IncorrectAnswer3,
+		)
+		if err != nil {
+			panic(err)
+
+		}
+
+		session.CurrentQuestion = &question
+
+		session.QuestionHistoryIDs = append(session.QuestionHistoryIDs, session.CurrentQuestion.ID)
+		session.QuestionHistory = append(session.QuestionHistory, session.CurrentQuestion)
+
+		if session.Gamemode == "sprint" {
+			session.QuestionExpiration = time.Now().Add(time.Second * 60)
+		}
+
+		session.Lock.Unlock()
+
+		return nil
+	}
+
+	return errors.New("Invalid session ID")
+}
+
+func (context *Context) ExpireQuestions() {
+	for {
+		context.sessionsLock.Lock()
+
+		for sessionID, session := range context.sessions {
+			if session.Gamemode == "sprint" && time.Now().UTC().Unix() > session.QuestionExpiration.Unix() {
+				session.Lock.Lock()
+
+				session.QuestionHistoryIDs = append(session.QuestionHistoryIDs, session.CurrentQuestion.ID)
+				session.QuestionHistory = append(session.QuestionHistory, session.CurrentQuestion)
+
+				session.Lock.Unlock()
+
+				// TODO: This can't lock when it's lock
+				err := context.NewQuestion(sessionID)
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
+
+		context.sessionsLock.Unlock()
+
+		time.Sleep(1 * time.Second)
+	}
+}
+
+func containsInt(source *[]int, find *int) bool {
+	for idx := range *source {
+		if (*source)[idx] == *find {
+			return true
+		}
+	}
+
+	return false
+}
+
+func containsStr(source *[]string, find *string) bool {
 	for idx := range *source {
 		if (*source)[idx] == *find {
 			return true
@@ -152,7 +277,7 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Ensure the gamemode is valid
-	if !contains(&[]string{"marathon", "sprint"}, &startAttempt.Gamemode) {
+	if !containsStr(&[]string{"marathon", "sprint"}, &startAttempt.Gamemode) {
 		response, err := json.Marshal(SessionResponse{
 			Success: false,
 			Message: "Invalid gamemode",
@@ -194,7 +319,7 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	if !contains(&categories, &startAttempt.Category) {
+	if !containsStr(&categories, &startAttempt.Category) {
 		response, err := json.Marshal(SessionResponse{
 			Success: false,
 			Message: "Invalid category",
@@ -211,7 +336,7 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Ensure the difficulty is valid
-	if !contains(&[]string{"easy", "medium", "hard"}, &startAttempt.Difficulty) {
+	if !containsStr(&[]string{"easy", "medium", "hard"}, &startAttempt.Difficulty) {
 		response, err := json.Marshal(SessionResponse{
 			Success: false,
 			Message: "Invalid difficulty",
@@ -258,16 +383,37 @@ func (context *Context) GameStart(w http.ResponseWriter, r *http.Request) {
 	sessionID := string(runes)
 
 	// Create a session and add it to the global state
-	context.sessions[sessionID] = &Session{
-		Gamemode:     startAttempt.Gamemode,
-		Category:     startAttempt.Category,
-		Difficulty:   startAttempt.Difficulty,
-		StartedAt:    time.Now().UTC(),
-		SinglePlayer: startAttempt.SinglePlayer,
-		Password:     startAttempt.Password,
+	context.sessionsLock.Lock()
+
+	var newSession Session
+
+	if startAttempt.Gamemode == "sprint" {
+		newSession = Session{
+			Gamemode:           startAttempt.Gamemode,
+			Category:           startAttempt.Category,
+			Difficulty:         startAttempt.Difficulty,
+			StartedAt:          time.Now().UTC(),
+			SinglePlayer:       startAttempt.SinglePlayer,
+			Password:           startAttempt.Password,
+			QuestionExpiration: time.Now().Add(time.Second * 60),
+		}
+	} else {
+		newSession = Session{
+			Gamemode:           startAttempt.Gamemode,
+			Category:           startAttempt.Category,
+			Difficulty:         startAttempt.Difficulty,
+			StartedAt:          time.Now().UTC(),
+			SinglePlayer:       startAttempt.SinglePlayer,
+			Password:           startAttempt.Password,
+			QuestionExpiration: time.Unix(math.MaxInt64, 0),
+		}
 	}
-	context.sessions[sessionID].Players = make(map[string]*SessionPlayer, 1)
-	context.sessions[sessionID].Players[auth["iss"].(string)] = &SessionPlayer{}
+	newSession.Players = make(map[string]*SessionPlayer, 1)
+	newSession.Players[auth["iss"].(string)] = &SessionPlayer{}
+
+	context.sessions[sessionID] = &newSession
+
+	context.sessionsLock.Unlock()
 
 	response, err := json.Marshal(SessionResponse{
 		Success: true,
@@ -322,7 +468,11 @@ func (context *Context) GameJoin(w http.ResponseWriter, r *http.Request) {
 
 		// Insert the player into the session if they aren't already in it
 		if _, ok := session.Players[auth["iss"].(string)]; !ok {
+			session.Lock.Lock()
+
 			session.Players[auth["iss"].(string)] = &SessionPlayer{}
+
+			session.Lock.Unlock()
 
 			response, err := json.Marshal(SessionResponse{Success: true})
 			if err != nil {
@@ -385,11 +535,19 @@ func (context *Context) GameLeave(w http.ResponseWriter, r *http.Request) {
 	if session, ok := context.sessions[leaveAttempt.SessionID]; ok {
 		// Ensure the player's in the session
 		if _, ok := session.Players[auth["iss"].(string)]; ok {
+			session.Lock.Lock()
+
 			delete(session.Players, auth["iss"].(string))
+
+			session.Lock.Unlock()
 
 			// Delete the session if there's 0 players
 			if len(session.Players) == 0 {
+				context.sessionsLock.Lock()
+
 				delete(context.sessions, leaveAttempt.SessionID)
+
+				context.sessionsLock.Unlock()
 			}
 
 			response, err := json.Marshal(SessionResponse{Success: true})
@@ -453,31 +611,10 @@ func (context *Context) GameGetQuestion(w http.ResponseWriter, r *http.Request) 
 		if _, ok := session.Players[auth["iss"].(string)]; ok {
 			// Ensure a question is set
 			if time.Now().UTC().Unix() > session.QuestionExpiration.UTC().Unix() || session.CurrentQuestion == nil {
-				var question SQLQuestion
-
-				stmt := `
-					SELECT id, question_body, correct_answer, incorrect_answer_1, incorrect_answer_2, incorrect_answer_3
-					FROM questions
-					WHERE category=?
-					AND difficulty=?;`
-				err := context.db.QueryRow(stmt, session.Category, session.Difficulty).Scan(
-					&question.ID,
-					&question.Body,
-					&question.CorrectAnswer,
-					&question.IncorrectAnswer1,
-					&question.IncorrectAnswer2,
-					&question.IncorrectAnswer3,
-				)
+				err := context.NewQuestion(sessionID)
 				if err != nil {
 					panic(err)
-
 				}
-
-				session.CurrentQuestion = &question
-
-				session.QuestionHistory = append(session.QuestionHistory, session.CurrentQuestion)
-
-				session.QuestionExpiration = time.Now().Add(time.Second * 60)
 			}
 
 			payload := SessionResponse{
@@ -490,6 +627,7 @@ func (context *Context) GameGetQuestion(w http.ResponseWriter, r *http.Request) 
 			responseQuestion.ID = session.CurrentQuestion.ID
 			responseQuestion.Body = session.CurrentQuestion.Body
 
+			// TODO: Input these randomly
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.CorrectAnswer)
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.IncorrectAnswer1)
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.IncorrectAnswer2)
@@ -556,29 +694,62 @@ func (context *Context) GamePostAnswer(w http.ResponseWriter, r *http.Request) {
 	// Ensure the session exists
 	if session, ok := context.sessions[answerAttempt.SessionID]; ok {
 		// Ensure the player's in the given session
-		if _, ok := session.Players[auth["iss"].(string)]; ok {
-			if answerAttempt.Answer == session.CurrentQuestion.CorrectAnswer {
-				// TODO: Record answer and points
+		if player, ok := session.Players[auth["iss"].(string)]; ok {
+			if answerAttempt.QuestionID == session.CurrentQuestion.ID {
+				if answerAttempt.Answer == session.CurrentQuestion.CorrectAnswer {
+					// Record answer and points
+					player.Score += 1
 
-				response, err := json.Marshal(SessionResponse{
-					Success: true,
-					Data:    &SessionResponseData{Correct: true},
-				})
-				if err != nil {
-					panic(err)
+					session.QuestionHistoryIDs = append(session.QuestionHistoryIDs, session.CurrentQuestion.ID)
+					session.QuestionHistory = append(session.QuestionHistory, session.CurrentQuestion)
+
+					err := context.NewQuestion(answerAttempt.SessionID)
+					if err != nil {
+						panic(err)
+					}
+
+					a := true
+					response, err := json.Marshal(SessionResponse{
+						Success: true,
+						Data:    &SessionResponseData{Correct: &a},
+					})
+					if err != nil {
+						panic(err)
+					}
+
+					w.Header().Set("Content-Type", "application/json; charset=utf-8")
+					w.WriteHeader(http.StatusOK)
+					w.Write(response)
+
+					return
+				} else {
+					session.QuestionHistoryIDs = append(session.QuestionHistoryIDs, session.CurrentQuestion.ID)
+					session.QuestionHistory = append(session.QuestionHistory, session.CurrentQuestion)
+
+					err := context.NewQuestion(answerAttempt.SessionID)
+					if err != nil {
+						panic(err)
+					}
+
+					a := false
+					response, err := json.Marshal(SessionResponse{
+						Success: true,
+						Data:    &SessionResponseData{Correct: &a},
+					})
+					if err != nil {
+						panic(err)
+					}
+
+					w.Header().Set("Content-Type", "application/json; charset=utf-8")
+					w.WriteHeader(http.StatusOK)
+					w.Write(response)
+
+					return
 				}
-
-				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				w.WriteHeader(http.StatusOK)
-				w.Write(response)
-
-				return
 			} else {
-				// TODO: Record answer and points
-
 				response, err := json.Marshal(SessionResponse{
-					Success: true,
-					Data:    &SessionResponseData{Correct: false},
+					Success: false,
+					Message: "Invalid question ID",
 				})
 				if err != nil {
 					panic(err)
