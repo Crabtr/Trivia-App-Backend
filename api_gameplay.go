@@ -144,7 +144,7 @@ func (context *Context) NewQuestion(sessionID string) error {
 			panic(err)
 		}
 
-		rand.Seed(time.Now().Unix())
+		rand.Seed(time.Now().UnixNano())
 
 		var questionID int
 
@@ -703,6 +703,16 @@ func (context *Context) GamePostAnswer(w http.ResponseWriter, r *http.Request) {
 				if answerAttempt.Answer == session.CurrentQuestion.CorrectAnswer {
 					// Record answer and points
 					player.Score += 1
+
+					// Uptick player's global score
+					scoreStmt := `
+						UPDATE users
+						SET score = score + 1
+						WHERE username = ?;`
+					_, err = context.db.Exec(scoreStmt, auth["iss"].(string))
+					if err != nil {
+						panic(err)
+					}
 
 					session.QuestionHistoryIDs = append(session.QuestionHistoryIDs, session.CurrentQuestion.ID)
 					session.QuestionHistory = append(session.QuestionHistory, session.CurrentQuestion)
