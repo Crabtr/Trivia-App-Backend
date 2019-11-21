@@ -207,7 +207,6 @@ func (context *Context) ExpireQuestions() {
 
 				session.Lock.Unlock()
 
-				// TODO: This can't lock when it's lock
 				err := context.NewQuestion(sessionID)
 				if err != nil {
 					panic(err)
@@ -627,11 +626,16 @@ func (context *Context) GameGetQuestion(w http.ResponseWriter, r *http.Request) 
 			responseQuestion.ID = session.CurrentQuestion.ID
 			responseQuestion.Body = session.CurrentQuestion.Body
 
-			// TODO: Input these randomly
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.CorrectAnswer)
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.IncorrectAnswer1)
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.IncorrectAnswer2)
 			responseQuestion.Answers = append(responseQuestion.Answers, session.CurrentQuestion.IncorrectAnswer3)
+
+			// Shuffle the answers
+			rand.Seed(time.Now().UnixNano())
+			rand.Shuffle(len(responseQuestion.Answers), func(i, j int) {
+				responseQuestion.Answers[i], responseQuestion.Answers[j] = responseQuestion.Answers[j], responseQuestion.Answers[i]
+			})
 
 			payload.Data.Questions = append(payload.Data.Questions, responseQuestion)
 
