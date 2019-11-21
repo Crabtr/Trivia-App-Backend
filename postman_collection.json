@@ -115,27 +115,24 @@
 		},
 		{
 			"name": "game, start",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
 			"request": {
-				"method": "GET",
+				"method": "POST",
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzAzMjI0MDgsImlzcyI6ImV2YW4ifQ.bdIn733Lvw6LGhl55LLrDzpL1V6Bp0r2972q04EZHkw",
-						"type": "text"
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzAzMjI0MDgsImlzcyI6ImV2YW4ifQ.bdIn733Lvw6LGhl55LLrDzpL1V6Bp0r2972q04EZHkw"
 					},
 					{
 						"key": "Content-Type",
 						"name": "Content-Type",
-						"value": "application/json",
-						"type": "text"
+						"type": "text",
+						"value": "application/json"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"gamemode\": \"marathon\",\n\t\"category\": \"Science: Computers\",\n\t\"difficulty\": \"medium\",\n\t\"single_player\": true,\n\t\"password\": \"\"\n}",
+					"raw": "{\n\t\"gamemode\": \"sprint\",\n\t\"category\": \"Science: Computers\",\n\t\"difficulty\": \"medium\",\n\t\"single_player\": true,\n\t\"password\": \"\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -266,7 +263,7 @@
 					}
 				],
 				"url": {
-					"raw": "134.209.35.144:8080/api/game/question?session=N2lABJvsD1L7lBOF",
+					"raw": "134.209.35.144:8080/api/game/question?session=56DDmhIlFiDD8YRx",
 					"host": [
 						"134",
 						"209",
@@ -282,7 +279,7 @@
 					"query": [
 						{
 							"key": "session",
-							"value": "N2lABJvsD1L7lBOF"
+							"value": "56DDmhIlFiDD8YRx"
 						}
 					]
 				}
@@ -308,7 +305,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"session_id\": \"N2lABJvsD1L7lBOF\",\n\t\"question_id\": \"60\",\n\t\"answer\": \"The Onion Router\"\n}",
+					"raw": "{\n\t\"session_id\": \"56DDmhIlFiDD8YRx\",\n\t\"question_id\": 2944,\n\t\"answer\": \"New Mexico\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -351,7 +348,7 @@
 					}
 				],
 				"url": {
-					"raw": "134.209.35.144:8080/api/game/info?session=tSgKw2uOzmH9kF6d",
+					"raw": "134.209.35.144:8080/api/game/info?session=56DDmhIlFiDD8YRx",
 					"host": [
 						"134",
 						"209",
@@ -367,8 +364,64 @@
 					"query": [
 						{
 							"key": "session",
-							"value": "tSgKw2uOzmH9kF6d"
+							"value": "56DDmhIlFiDD8YRx"
 						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "game, meta",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "134.209.35.144:8080/api/meta",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"meta"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "game, leaderboard",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzAzMjI0MDgsImlzcyI6ImV2YW4ifQ.bdIn733Lvw6LGhl55LLrDzpL1V6Bp0r2972q04EZHkw"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "134.209.35.144:8080/api/leaderboard",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"leaderboard"
 					]
 				}
 			},
