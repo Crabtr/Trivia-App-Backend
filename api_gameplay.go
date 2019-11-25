@@ -148,6 +148,15 @@ func (context *Context) NewQuestion(sessionID string) error {
 
 		var questionID int
 
+		// TODO: This isn't good, but it isn't good UX at all
+		if len(questionIDs) == len(session.QuestionHistoryIDs) {
+			context.sessionsLock.Lock()
+
+			delete(context.sessions, sessionID)
+
+			context.sessionsLock.Unlock()
+		}
+
 		for {
 			questionID = questionIDs[rand.Intn(len(questionIDs))]
 
@@ -951,9 +960,6 @@ func (context *Context) GameMeta(w http.ResponseWriter, r *http.Request) {
 func (context *Context) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 	var payload SessionResponseData
 
-	// TODO: This should probably ensure the offset is valid
-	// TODO: DESC might be unnecessary as the table already sorts
-	// TODO: Ensure this uses and offset
 	stmt := `
 		SELECT *
 		FROM leaderboard;`
