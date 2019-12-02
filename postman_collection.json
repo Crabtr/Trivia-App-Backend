@@ -114,6 +114,120 @@
 			"response": []
 		},
 		{
+			"name": "admin, user, modify username",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzUyNjU1NDksImlzcyI6ImV2YW4ifQ.hVxWmsB7G2uTL2n6bzUQhZEKI3F5fPjCaKpvG53_f6w",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"action\": \"user.modify.username\",\n\t\"data\": {\n\t\t\"username\": \"Test\",\n\t\t\"value_str\": \"Test2\"\n\t}\n}"
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/admin/action",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"admin",
+						"action"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "admin, user, modify score",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzUyNjU1NDksImlzcyI6ImV2YW4ifQ.hVxWmsB7G2uTL2n6bzUQhZEKI3F5fPjCaKpvG53_f6w"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"action\": \"user.modify.score\",\n\t\"data\": {\n\t\t\"username\": \"Test\",\n\t\t\"value_int\": 100\n\t}\n}"
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/admin/action",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"admin",
+						"action"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "admin, user, delete",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzUyNjU1NDksImlzcyI6ImV2YW4ifQ.hVxWmsB7G2uTL2n6bzUQhZEKI3F5fPjCaKpvG53_f6w"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"action\": \"user.delete\",\n\t\"data\": {\n\t\t\"username\": \"Test\"\n\t}\n}"
+				},
+				"url": {
+					"raw": "134.209.35.144:8080/api/admin/action",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"admin",
+						"action"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "game, start",
 			"request": {
 				"method": "POST",
@@ -132,7 +246,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"gamemode\": \"sprint\",\n\t\"category\": \"Science: Computers\",\n\t\"difficulty\": \"medium\",\n\t\"single_player\": true,\n\t\"password\": \"\"\n}",
+					"raw": "{\n\t\"gamemode\": \"marathon\",\n\t\"category\": \"Science: Computers\",\n\t\"difficulty\": \"medium\",\n\t\"single_player\": true,\n\t\"password\": \"\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"

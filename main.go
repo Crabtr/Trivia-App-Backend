@@ -50,7 +50,8 @@ func main() {
 			email           VARCHAR(255) NOT NULL UNIQUE,
 			password_hash   TEXT NOT NULL,
 			score           INT NOT NULL,
-			games_played    INT NOT NULL
+			games_played    INT NOT NULL,
+			is_admin		BOOLEAN NOT NULL
 		);`
 	_, err = context.db.Exec(createUsersStmt)
 	if err != nil {
@@ -82,7 +83,9 @@ func main() {
 	router.HandleFunc("/api/user/create", context.UserCreateEndpoint).Methods("POST")
 	router.HandleFunc("/api/user/auth", context.UserAuthEndpoint).Methods("POST")
 	router.HandleFunc("/api/user/info", context.UserInfoEndpoint).Methods("POST")
-	// router.HandleFunc("/api/user/delete", context.UserAuthenticationEndpoint).Methods("POST")
+
+	// Admin endpoints
+	router.HandleFunc("/api/admin/action", ValidateJWTMiddleware(context.AdminEndpoint)).Methods("POST")
 
 	// Gameplay endpoints
 	router.HandleFunc("/api/game/start", ValidateJWTMiddleware(context.GameStart)).Methods("POST")

@@ -53,6 +53,7 @@ type SQLUser struct {
 	PasswordHash string
 	Score        int
 	GamesPlayed  int
+	IsAdmin      bool
 }
 
 func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -133,12 +134,13 @@ func (context *Context) UserCreateEndpoint(w http.ResponseWriter, r *http.Reques
 
 	// Add the user's information to the database
 	_, err = context.db.Exec(
-		`INSERT INTO users VALUES (?,?,?,?,?);`,
+		`INSERT INTO users VALUES (?,?,?,?,?,?);`,
 		createAttempt.Username,
 		createAttempt.Email,
 		passwordHash,
 		0,
 		0,
+		false,
 	)
 	if err != nil {
 		panic(err) // TODO: Better here
@@ -191,6 +193,7 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 		&sqlUser.PasswordHash,
 		&sqlUser.Score,
 		&sqlUser.GamesPlayed,
+		&sqlUser.IsAdmin,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -287,6 +290,7 @@ func (context *Context) UserInfoEndpoint(w http.ResponseWriter, r *http.Request)
 		&sqlUser.PasswordHash,
 		&sqlUser.Score,
 		&sqlUser.GamesPlayed,
+		&sqlUser.IsAdmin,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
