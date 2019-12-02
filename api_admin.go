@@ -10,6 +10,8 @@ import (
 type AdminAttempt struct {
 	Action string `json:"action"`
 	Data   struct {
+		// Go doesn't have variable overloading, so we have to specify the data
+		// type for values
 		Username string `json:"username"`
 		ValueStr string `json:"value_str,omitempty"`
 		ValueInt int    `json:"value_int,omitempty"`
@@ -29,22 +31,22 @@ func (context *Context) AdminEndpoint(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	// TODO: Ensure the user's an admin
+	// Ensure the user's an admin
+	var isAdmin bool
+
 	isAdminStmt := `
 		SELECT is_admin
 		FROM users
 		WHERE username = ?;`
-
-	var isAdmin bool
-
 	err = context.db.QueryRow(isAdminStmt, auth["iss"].(string)).Scan(&isAdmin)
 	if err != nil {
 		panic(err)
 	}
 
 	if isAdmin {
-		// TODO: This should return an error if the username doesn't exist
+		// TODO: Ensure the target username exists before going further
 
+		// Scheme for action strings: category.action.target
 		if adminAttempt.Action == "user.modify.username" {
 			updateUserStmt := `
 				UPDATE users
