@@ -7,6 +7,17 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+type Question struct {
+	Category         string `json:"category"`
+	QuestionType     string `json:"type"`
+	Difficulty       string `json:"difficulty"`
+	QuestionBody     string `json:"question"`
+	CorrectAnswer    string `json:"correct_answer"`
+	IncorrectAnswer1 string `json:"incorrect_answer1"`
+	IncorrectAnswer2 string `json:"incorrect_answer2"`
+	IncorrectAnswer3 string `json:"incorrect_answer3"`
+}
+
 type AdminAttempt struct {
 	Action string `json:"action"`
 	Data   struct {
@@ -157,4 +168,25 @@ func (context *Context) AdminEndpoint(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 
 	return
+}
+
+func (context *Context) AddNewQuestion(w http.ResponseWriter, r *http.Request) {
+
+	var newQuestion Question
+
+	err := json.NewDecoder(r.Body).Decode(&newQuestion)
+	if err != nil {
+		panic(err)
+	}
+	_, err = context.db.Exec(
+		`INSERT INTO questions (question_body, category, difficulty, type, correct_answer, incorrect_answer_1,incorrect_answer_2,incorrect_answer_3) VALUES (?,?,?,?,?,?,?,?);`,
+		newQuestion.QuestionBody,
+		newQuestion.Category,
+		newQuestion.Difficulty,
+		newQuestion.QuestionType,
+		newQuestion.CorrectAnswer,
+		newQuestion.IncorrectAnswer1,
+		newQuestion.IncorrectAnswer2,
+		newQuestion.IncorrectAnswer3,
+	)
 }
