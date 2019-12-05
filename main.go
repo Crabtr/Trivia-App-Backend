@@ -29,9 +29,9 @@ func main() {
 	// Generate a connection string
 	dbPath := fmt.Sprintf(
 		"%s:%s@tcp(%s)/trivia?charset=utf8mb4",
-		"trivia",         // username
-		"supersecret123", // password
-		"0.0.0.0",        // address
+		"root",     // username
+		"rootpass", // password
+		"0.0.0.0",  // address
 	)
 
 	context.db, err = sql.Open("mysql", dbPath)
@@ -86,7 +86,7 @@ func main() {
 
 	// Admin endpoints
 	router.HandleFunc("/api/admin/action", ValidateJWTMiddleware(context.AdminEndpoint)).Methods("POST")
-
+	router.HandleFunc("/api/admin/add", context.AddNewQuestion).Methods("POST")
 	// Gameplay endpoints
 	router.HandleFunc("/api/game/start", ValidateJWTMiddleware(context.GameStart)).Methods("POST")
 	router.HandleFunc("/api/game/join", ValidateJWTMiddleware(context.GameJoin)).Methods("POST")
