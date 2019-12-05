@@ -21,8 +21,6 @@ type Question struct {
 type AdminAttempt struct {
 	Action string `json:"action"`
 	Data   struct {
-		// Go doesn't have variable overloading, so we have to specify the data
-		// type for values
 		Username string `json:"username"`
 		ValueStr string `json:"value_str,omitempty"`
 		ValueInt int    `json:"value_int,omitempty"`
@@ -134,14 +132,6 @@ func (context *Context) AdminEndpoint(w http.ResponseWriter, r *http.Request) {
 	decoded := r.Context().Value("decoded")
 	auth := decoded.(jwt.MapClaims)
 
-	// Decode the received JSON body
-	var adminAttempt AdminAttempt
-
-	err := json.NewDecoder(r.Body).Decode(&adminAttempt)
-	if err != nil {
-		panic(err)
-	}
-
 	// Ensure the user's an admin
 	var isAdmin bool
 
@@ -149,12 +139,20 @@ func (context *Context) AdminEndpoint(w http.ResponseWriter, r *http.Request) {
 		SELECT is_admin
 		FROM users
 		WHERE username = ?;`
-	err = context.db.QueryRow(isAdminStmt, auth["iss"].(string)).Scan(&isAdmin)
+	err := context.db.QueryRow(isAdminStmt, auth["iss"].(string)).Scan(&isAdmin)
 	if err != nil {
 		panic(err)
 	}
 
 	if isAdmin {
+		// Decode the received JSON body
+		var adminAttempt AdminAttempt
+
+		err = json.NewDecoder(r.Body).Decode(&adminAttempt)
+		if err != nil {
+			panic(err)
+		}
+
 		// TODO: Ensure the target username exists before going further
 
 		switch adminAttempt.Action {
@@ -298,14 +296,6 @@ func (context *Context) AddNewQuestion(w http.ResponseWriter, r *http.Request) {
 	decoded := r.Context().Value("decoded")
 	auth := decoded.(jwt.MapClaims)
 
-	// Decode the received JSON body
-	var adminAttempt AdminAttempt
-
-	err := json.NewDecoder(r.Body).Decode(&adminAttempt)
-	if err != nil {
-		panic(err)
-	}
-
 	// Ensure the user's an admin
 	var isAdmin bool
 
@@ -313,7 +303,7 @@ func (context *Context) AddNewQuestion(w http.ResponseWriter, r *http.Request) {
 		SELECT is_admin
 		FROM users
 		WHERE username = ?;`
-	err = context.db.QueryRow(isAdminStmt, auth["iss"].(string)).Scan(&isAdmin)
+	err := context.db.QueryRow(isAdminStmt, auth["iss"].(string)).Scan(&isAdmin)
 	if err != nil {
 		panic(err)
 	}
@@ -336,6 +326,20 @@ func (context *Context) AddNewQuestion(w http.ResponseWriter, r *http.Request) {
 			newQuestion.IncorrectAnswer2,
 			newQuestion.IncorrectAnswer3,
 		)
+
+		// Return a success payload
+		response, err := json.Marshal(AdminResponse{
+			Success: true,
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
+
+		return
 	}
 
 	// Return a failure payload
