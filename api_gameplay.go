@@ -711,14 +711,26 @@ func (context *Context) GamePostAnswer(w http.ResponseWriter, r *http.Request) {
 			if answerAttempt.QuestionID == session.CurrentQuestion.ID {
 				if answerAttempt.Answer == session.CurrentQuestion.CorrectAnswer {
 					// Record answer and points
-					player.Score += 1
+					uptick := 0
+
+					switch session.Difficulty {
+					case "easy":
+						player.Score += 1
+						uptick = 1
+					case "medium":
+						player.Score += 2
+						uptick = 2
+					case "hard":
+						player.Score += 3
+						uptick = 3
+					}
 
 					// Uptick player's global score
 					scoreStmt := `
 						UPDATE users
-						SET score = score + 1
+						SET score = score + ?
 						WHERE username = ?;`
-					_, err = context.db.Exec(scoreStmt, auth["iss"].(string))
+					_, err = context.db.Exec(scoreStmt, uptick, auth["iss"].(string))
 					if err != nil {
 						panic(err)
 					}
