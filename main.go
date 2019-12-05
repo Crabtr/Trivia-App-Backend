@@ -86,7 +86,9 @@ func main() {
 
 	// Admin endpoints
 	router.HandleFunc("/api/admin/action", ValidateJWTMiddleware(context.AdminEndpoint)).Methods("POST")
-	router.HandleFunc("/api/admin/add", context.AddNewQuestion).Methods("POST")
+	router.HandleFunc("/api/admin/users", ValidateJWTMiddleware(context.GetUsers)).Methods("GET")
+	router.HandleFunc("/api/admin/add", ValidateJWTMiddleware(context.AddNewQuestion)).Methods("POST")
+
 	// Gameplay endpoints
 	router.HandleFunc("/api/game/start", ValidateJWTMiddleware(context.GameStart)).Methods("POST")
 	router.HandleFunc("/api/game/join", ValidateJWTMiddleware(context.GameJoin)).Methods("POST")
