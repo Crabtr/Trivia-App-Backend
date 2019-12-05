@@ -114,6 +114,40 @@
 			"response": []
 		},
 		{
+			"name": "admin, users",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzUyNjU1NDksImlzcyI6ImV2YW4ifQ.hVxWmsB7G2uTL2n6bzUQhZEKI3F5fPjCaKpvG53_f6w"
+					},
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "134.209.35.144:8080/api/admin/users",
+					"host": [
+						"134",
+						"209",
+						"35",
+						"144"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"admin",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "admin, user, modify username",
 			"request": {
 				"method": "POST",
@@ -541,5 +575,6 @@
 			},
 			"response": []
 		}
-	]
+	],
+	"protocolProfileBehavior": {}
 }
