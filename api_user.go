@@ -32,6 +32,7 @@ type AuthAttempt struct {
 
 type AuthResponseData struct {
 	Username    string `json:"username,omitempty"`
+	IsAdmin     *bool  `json:"is_admin,omitempty"`
 	Token       string `json:"token,omitempty"`
 	Score       *int   `json:"score,omitempty"`
 	GamesPlayed *int   `json:"games_played,omitempty"`
@@ -238,6 +239,7 @@ func (context *Context) UserAuthEndpoint(w http.ResponseWriter, r *http.Request)
 			Success: true,
 			Data: &AuthResponseData{
 				Username: authAttempt.Username,
+				IsAdmin:  &sqlUser.IsAdmin,
 				Token:    tokenString,
 			},
 		})
