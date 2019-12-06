@@ -65,7 +65,8 @@ func (context *Context) GetUsers(w http.ResponseWriter, r *http.Request) {
 
 		allUsersStmt := `
 			SELECT *
-			FROM users;`
+			FROM users
+			WHERE is_admin = false;`
 		rows, err := context.db.Query(allUsersStmt)
 		if err != nil {
 			panic(err)
