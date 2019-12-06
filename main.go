@@ -62,6 +62,7 @@ func main() {
 		CREATE OR REPLACE VIEW leaderboard
 		AS SELECT username, score
 		FROM users
+		WHERE is_admin = false
 		ORDER BY score DESC;`
 	_, err = context.db.Exec(createLeaderboardStmt)
 	if err != nil {
