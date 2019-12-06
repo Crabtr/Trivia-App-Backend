@@ -974,7 +974,8 @@ func (context *Context) GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 
 	stmt := `
 		SELECT *
-		FROM leaderboard;`
+		FROM leaderboard
+		WHERE is_admin = false;`
 	rows, err := context.db.Query(stmt)
 	if err != nil {
 		panic(err)
